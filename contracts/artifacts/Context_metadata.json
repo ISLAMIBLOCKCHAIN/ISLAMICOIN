@@ -1,0 +1,45 @@
+{
+	"compiler": {
+		"version": "0.8.4+commit.c7e474f2"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/ISLAMICOIN.sol": "Context"
+		},
+		"evmVersion": "istanbul",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/ISLAMICOIN.sol": {
+			"keccak256": "0x582b2d0e26a2c50f1395245fccd0f611ee92170a087b42bccc7144475b5da40a",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://0a9f29fdc86abd4a34fed06310035757b32bcca69738fc6b6d14e661f3e427af",
+				"dweb:/ipfs/QmVUBjU8sqjQQZKhVYNzfSQx718crjMxxuW88Hhhngd1FN"
+			]
+		}
+	},
+	"version": 1
+}
