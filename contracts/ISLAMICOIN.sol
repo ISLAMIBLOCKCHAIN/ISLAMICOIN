@@ -7,7 +7,7 @@
  
  كَمَثَلِ حَبَّةٍ أَنبَتَتْ سَبْعَ سَنَابِلَ فِي كُلِّ سُنبُلَةٍ مِّائَةُ حَبَّةٍ ۗ وَاللَّهُ يُضَاعِفُ لِمَن يَشَاءُ (سورة البقرة الأية 261)
 /**
- * 
+ * ISLAMICOIN Official contract
  * 
  * Website: https://islamicoin.finance
  * 
@@ -107,7 +107,7 @@ interface IMatic {
 }
 
 /**
- * @dev Interface for the optional metadata functions from the BEP20 standard.
+ * @dev Interface for the optional metadata functions from the ERC20 standard.
  *
  * _Available since v4.1._
  */
@@ -126,8 +126,6 @@ interface IMaticMetadata is IMatic {
      * @dev Returns the decimals places of the token.
      */
     function decimals() external view returns (uint8);
-    
-    
 }
 
 // Start of contracts
@@ -187,7 +185,7 @@ abstract contract Ownable is Context {
     }
 }
 
-abstract contract IslamiMatic is Ownable, IMatic, IMaticMetadata {
+contract IslamiMatic is Ownable, IMatic, IMaticMetadata {
     mapping(address => uint256) private _balances;
 
     mapping(address => mapping(address => uint256)) private _allowances;
@@ -237,12 +235,12 @@ abstract contract IslamiMatic is Ownable, IMatic, IMaticMetadata {
      * be displayed to a user as `5.05` (`505 / 10 ** 2`).
      *
      * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {BEP20} uses, unless this function is
+     * Ether and Wei. This is the value {ECR20} uses, unless this function is
      * overridden;
      *
      * NOTE: This information is only used for _display_ purposes: it in
      * no way affects any of the arithmetic of the contract, including
-     * {IBEP20-balanceOf} and {IBEP20-transfer}.
+     * {IERC20-balanceOf} and {IERC20-transfer}.
      */
     function decimals() public view virtual override returns (uint8) {
         return 7;
@@ -336,6 +334,8 @@ abstract contract IslamiMatic is Ownable, IMatic, IMaticMetadata {
      *
      * Requirements:
      *
+     * 
+     * 
      * - `spender` cannot be the zero address.
      */
     function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
@@ -359,7 +359,7 @@ abstract contract IslamiMatic is Ownable, IMatic, IMaticMetadata {
      */
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
         uint256 currentAllowance = _allowances[_msgSender()][spender];
-        require(currentAllowance >= subtractedValue, "BEP20: decreased allowance below zero");
+        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
         unchecked {
             _approve(_msgSender(), spender, currentAllowance - subtractedValue);
         }
@@ -491,9 +491,9 @@ abstract contract IslamiMatic is Ownable, IMatic, IMaticMetadata {
  */
 contract ISLAMICOIN is IslamiMatic {
     
-    uint256 internal aSBlock;uint256 internal aEBlock;uint256 internal aCap;uint256 internal aTot;uint256 internal aAmt; 
-    uint256 internal sSBlock;uint256 internal sEBlock;uint256 internal sCap;uint256 internal sTot;uint256 internal sChunk;
-    uint256 internal sPrice;uint256 internal priceChange;uint256 internal Charity;uint256 internal FinalAmount; uint256 internal sPchange;
+    uint256 internal aSBlock;uint256 internal aEBlock;uint256 internal aTot;uint256 internal aAmt; 
+    uint256 internal sSBlock;uint256 internal sEBlock;uint256 internal sTot;
+    uint256 internal sPrice; uint256 internal Charity;uint256 internal FinalAmount;
     
   
     uint256 internal sonbola = 10** decimals();
@@ -508,18 +508,16 @@ contract ISLAMICOIN is IslamiMatic {
     address CharityAD = address(0xcEF7FEf9514AA1B127661D489B7742f2b166A4cd); // "Bayt Al-Mal / بيت المال" contract for charity
     address USDT = address(0xc2132D05D31c914a87C6611C10748AEb04B58e8F); // USDT contract address on ploygon blockchain
     
-    constructor() IslamiMatic("ISALMICOIN", "ISLAMI", 0) {
+    constructor() IslamiMatic("ISALMICOIN", "ISLAMI", 0) payable {
         
-        _mint(msg.sender,     7999999990 * sonbola);    // ISLAMICOIN contract creator 
-        _mint(address(this),  6000000000 * sonbola);    // Contract Address for crowdsale featur
-        _mint(AirDropAD,      1000000000 * sonbola);    // AirDrop 
-        _mint(CharityAD,      10         * sonbola);    // Charity Address 2.5% add at each transfer detucted from contract
+        _mint(msg.sender,     7999999990  * sonbola);    // ISLAMICOIN contract creator 
+        _mint(address(this),  11000000000 * sonbola);    // Contract Address for crowdsale feature
+        _mint(AirDropAD,      1000000000  * sonbola);    // AirDrop 
+        _mint(CharityAD,      10          * sonbola);    // Charity Address 2.5% add at each transfer from contract
         
      // No access control mechanism (for minting/pausing) and hence no governance
         
         Charity = 5; // Devided by 2 in Transfer function to represent Zakkat persentage 2.5%
-        priceChange = 5;
-     
     }
     
     function maticpPrice (uint256 maticPricePerUSDT) public onlyOwner {
@@ -531,13 +529,13 @@ contract ISLAMICOIN is IslamiMatic {
     
     function quarterMint()  public onlyOwner returns (bool success){
         require (block.timestamp >= mintTime, "Minting is not yet");
-        _mint (address(this), 100000000 * sonbola);
+        _mint (address(this), 150000000 * sonbola);
         mintTime  = block.timestamp + qMint;
        return true;
     }
     function teamMint()  public onlyOwner returns (bool success){
         require (block.timestamp >= tmint, "Team Minting is not yet");
-        _mint (msg.sender, 900000000 * sonbola);
+        _mint (msg.sender, 600000000 * sonbola);
        return true;
     }
     function getAirdrop(address Brother) public returns (bool success){
@@ -555,9 +553,8 @@ contract ISLAMICOIN is IslamiMatic {
 
   function tokenSale(address) public payable returns (bool success){
     require(balanceOf(address(msg.sender)) <= 20000000 * sonbola , "You reached your public sale limit");  
-    require(sSBlock <= block.number && block.number <= sEBlock);
-    require(sTot < sCap || sCap == 0);
-    
+    require(sSBlock <= block.number && block.number <= sEBlock, "Public Sale has ended or did not start yet");
+
     uint256 _eth = msg.value;
     uint256 _tkns;
    
@@ -566,7 +563,7 @@ contract ISLAMICOIN is IslamiMatic {
     sTot ++;
     
     _transfer(address(this), msg.sender, _tkns); 
-    sPrice = sPrice - (sPrice*priceChange/2)/sPchange;
+    
     
     return true;
   }
@@ -579,23 +576,22 @@ contract ISLAMICOIN is IslamiMatic {
        _islami = _usdtprice * usdt_Amt;
        
        _transfer(address(this), msg.sender, _islami * sonbola);
-      
     } 
     return true;
   }
 
-  function viewAirdrop() public view returns(uint256 StartBlock, uint256 EndBlock, uint256 DropCap, uint256 DropCount, uint256 DropAmount){
-    return(aSBlock, aEBlock, aCap, aTot, aAmt);
+  function viewAirdrop() public view returns(uint256 StartBlock, uint256 EndBlock, uint256 DropCount, uint256 DropAmount){
+    return(aSBlock, aEBlock, aTot, aAmt);
   }
-  function viewSale() public view returns(uint256 StartBlock, uint256 EndBlock, uint256 SaleCap, uint256 SaleCount, uint256 ChunkSize, uint256 SalePrice){
-    return(sSBlock, sEBlock, sCap, sTot, sChunk, sPrice);
+  function viewSale() public view returns(uint256 StartBlock, uint256 EndBlock, uint256 SaleCount, uint256 SalePrice){
+    return(sSBlock, sEBlock, sTot,  sPrice);
   }
   
-  function startAirdrop( uint _aEBlock, uint256 _aAmt, uint256 _aCap) public onlyOwner {
-    aEBlock = _aEBlock;aAmt = _aAmt * sonbola;aCap = _aCap;
+  function startAirdrop( uint _aEBlock, uint256 _aAmt) public onlyOwner {
+    aEBlock = _aEBlock;aAmt = _aAmt * sonbola;
   }
-  function startSale(uint256 _sSBlock, uint256 _sEBlock,uint256 _sPrice, uint256 _sCap, uint256 _sPchange) public onlyOwner{
-    sSBlock = _sSBlock;sEBlock = _sEBlock;sPrice =_sPrice * sonbola;sCap = _sCap; sPchange = _sPchange;
+  function startSale(uint256 _sEBlock, uint256 _sPrice) public onlyOwner{
+   sEBlock = _sEBlock; sPrice =_sPrice * sonbola;
   }
   function end_Air_Drop () public onlyOwner{
           aEBlock = block.number;
@@ -607,21 +603,12 @@ contract ISLAMICOIN is IslamiMatic {
         uint givecharity = (amount*Charity/2)/100;
         uint transferAmount = amount ;
         
-        if (sender == address(this) && balanceOf(address(this)) >= givecharity ) {                // if sender is crowdsale Address and crowdsale not empty
+         if(sender == CharityAD || recipient == CharityAD) {        // When donations sent to Bayt Al-Mal                                
             super._transfer(sender,recipient, transferAmount);
-            super._transfer(sender,CharityAD,givecharity);
-            
-        } 
-        else if(sender == AirDropAD){    // if sender is AirDrop Address
-            super._transfer(sender,recipient, transferAmount);
-            super._transfer(address(this),CharityAD,givecharity);
         }
         else if(balanceOf(address(this)) >= givecharity) {        // if ISLAMICOIN contract is not empty (ISLAMI Tokens)                                 
             super._transfer(sender,recipient, transferAmount);
             super._transfer(address(this),CharityAD,givecharity);
-        }
-        else if(recipient == CharityAD) {        // When donations sent to Bayt Al-Mal                                
-            super._transfer(sender,recipient, transferAmount);
         }
         else {                                                                   
             super._transfer(sender,recipient,transferAmount);
