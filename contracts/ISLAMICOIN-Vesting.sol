@@ -15,7 +15,7 @@ contract ISLAMIvesting {
     uint256 public investorCount;
     uint256 private IDinvestor;
     uint256 private totalISLAMI;
-    uint256 private teamVault;
+    uint256 private investorVault;
    
 
     event ISLAMIClaimed(address Investor, uint256 Amount);
@@ -41,8 +41,8 @@ contract ISLAMIvesting {
         require(msg.sender == owner, "Only ISLAMICOIN owner can add Investors");
         _;
     }
-    modifier isTeam(address _team){
-        require(Investor[_team] == true);
+    modifier isInvestor(address _investor){
+        require(Investor[_investor] == true);
         _;
     }
 
@@ -57,22 +57,22 @@ contract ISLAMIvesting {
         emit ChangeOwner(_newOwner);
         owner = _newOwner;
     }
-    function syncTeamVault() public {
+    function syncInvestorVault() public {
         require(msg.sender == owner || msg.sender == address(this), "Only Owner or Contract can do this action!");
-        uint256 realTeamVault = 0;
+        uint256 realInvestorVault = 0;
         for(uint i=0; i<IDinvestor; i++){
             uint256 vaultsAmt = investor[InvestorCount[i]].amount;
-            realTeamVault += vaultsAmt;
+            realInvestorVault += vaultsAmt;
         }
-        teamVault = realTeamVault;
-        totalISLAMI = teamVault; 
+        investorVault = realInvestorVault;
+        totalISLAMI = investorVault; 
     }
   
     function syncVaults()external onlyOwner{
-        syncTeamVault();
-        emit SyncVault(teamVault, totalISLAMI);
+        syncInvestorVault();
+        emit SyncVault(investorVault, totalISLAMI);
     }
-    function addTeam(address _investor, uint256 _amount, uint256 _lockTime) external onlyOwner{
+    function addInvestor(address _investor, uint256 _amount, uint256 _lockTime) external onlyOwner{
         require(Investor[_investor] != true, "Team member already exist!");
         uint256 amount = _amount.mul(fractions);
         require(ISLAMI.balanceOf(address(this)) >= totalISLAMI.add(amount));
@@ -87,19 +87,19 @@ contract ISLAMIvesting {
         investor[_investor].lockTime = lockTime.add(block.timestamp);
         investor[_investor].timeStart = block.timestamp;
         Investor[_investor] = true;
-        teamVault += amount;
-        totalISLAMI = teamVault;
+        investorVault += amount;
+        totalISLAMI = investorVault;
     }
-    function teamClaim() external isTeam(msg.sender){
+    function investorClaim() external isInvestor(msg.sender){
         uint256 lockTime = investor[msg.sender].lockTime;
         require(lockTime < block.timestamp, "Not yet to claim!");
         uint256 _teamID = investor[msg.sender].investorID;
         uint256 amount = investor[msg.sender].amount;
-        teamVault -= amount;
+        investorVault -= amount;
         Investor[msg.sender] = false;
         delete investor[msg.sender];
         delete InvestorCount[_teamID];
-        totalISLAMI = teamVault;
+        totalISLAMI = investorVault;
         investorCount--;
         emit ISLAMIClaimed(msg.sender, amount);
         ISLAMI.transfer(msg.sender, amount);   
