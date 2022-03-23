@@ -11,7 +11,7 @@ contract ISLAMIvesting {
     using SafeMath for uint256;
     ERC20 public ISLAMI;
     address private owner;
-    uint256 fractions = 10**18;
+    uint256 fractions = 10**7;
     uint256 public investorCount;
     uint256 private IDinvestor;
     uint256 private totalISLAMI;
@@ -20,7 +20,7 @@ contract ISLAMIvesting {
 
     event ISLAMIClaimed(address Investor, uint256 Amount);
     event ChangeOwner(address NewOwner);
-    event SyncVault(uint256 TeamVault, uint256 TotalAmount);
+    event SyncVault(uint256 InvestorVault, uint256 TotalAmount);
     event WithdrawalBNB(uint256 _amount, uint256 decimal, address to); 
     event WithdrawalISLAMI(uint256 _amount,uint256 decimals, address to);
     event WithdrawalERC20(address _tokenAddr, uint256 _amount,uint256 decimals, address to);
@@ -42,7 +42,7 @@ contract ISLAMIvesting {
         _;
     }
     modifier isInvestor(address _investor){
-        require(Investor[_investor] == true);
+        require(Investor[_investor] == true, "You are not an Investor!");
         _;
     }
 
@@ -127,7 +127,7 @@ contract ISLAMIvesting {
         emit WithdrawalERC20(_tokenAddr, _amount, decimal, to);
         token.transfer(to, _amount*dcml); 
     } 
-    function withdrawalBNB(uint256 _amount, uint256 decimal, address to) external onlyOwner() {
+    function withdrawalMatic(uint256 _amount, uint256 decimal, address to) external onlyOwner() {
         require(address(this).balance >= _amount);
         uint256 dcml = 10 ** decimal;
         emit WithdrawalBNB(_amount, decimal, to);
