@@ -22,7 +22,7 @@ contract ISLAMIvesting {
     event ChangeOwner(address NewOwner);
     event SyncVault(uint256 InvestorVault, uint256 TotalAmount);
     event WithdrawalBNB(uint256 _amount, uint256 decimal, address to); 
-    event WithdrawalISLAMI(uint256 _amount,uint256 decimals, address to);
+    event WithdrawalISLAMI(uint256 _amount, address to);
     event WithdrawalERC20(address _tokenAddr, uint256 _amount,uint256 decimals, address to);
     
     struct VaultTeam{
@@ -73,12 +73,12 @@ contract ISLAMIvesting {
         emit SyncVault(investorVault, totalISLAMI);
     }
     function addInvestor(address _investor, uint256 _amount, uint256 _lockTime) external onlyOwner{
-        require(Investor[_investor] != true, "Team member already exist!");
+        require(Investor[_investor] != true, "Investor member already exist!");
         uint256 amount = _amount.mul(fractions);
-        require(ISLAMI.balanceOf(address(this)) >= totalISLAMI.add(amount));
+        require(ISLAMI.balanceOf(address(this)) >= totalISLAMI.add(amount), "Not enough ISLAMI!");
         uint256 lockTime = _lockTime.mul(1 days);
         require(amount > 0, "Amount cannot be zero!");
-        require(lockTime > 730 days, "Team locking is at least 2 years!");
+        require(lockTime > 730 days, "Investor locking is at least 2 years!");
         IDinvestor++;
         investorCount++;
         investor[InvestorCount[investorCount]] = investor[_investor];
@@ -112,13 +112,11 @@ contract ISLAMIvesting {
 
     function withdrawalISLAMI(uint256 _amount, address to) external onlyOwner() {
         ERC20 _tokenAddr = ISLAMI;
-        uint8 decimal = 7;
         uint256 amount = ISLAMI.balanceOf(address(this)).sub(totalISLAMI);
-        require(amount > 0, "No ISLAMI available for withdrawal!");// can only withdraw what is not locked for team or investors.
-        uint256 dcml = 10 ** decimal;
-        ERC20 token = ERC20(_tokenAddr);
-        emit WithdrawalISLAMI( _amount, decimal, to);
-        token.transfer(to, _amount*dcml); 
+        require(amount >= _amount, "No ISLAMI available for withdrawal! or try different amount");// can only withdraw what is not locked for investors.
+        ERC20 token = _tokenAddr;
+        emit WithdrawalISLAMI( _amount, to);
+        token.transfer(to, _amount*fractions); 
     } 
     function withdrawalERC20(address _tokenAddr, uint256 _amount, uint256 decimal, address to) external onlyOwner() {
         uint256 dcml = 10 ** decimal;
