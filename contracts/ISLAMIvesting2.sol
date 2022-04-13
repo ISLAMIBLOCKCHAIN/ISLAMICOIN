@@ -12,10 +12,13 @@ contract ISLAMIvesting2 {
     ISLAMICOIN public ISLAMI;
     address private owner;
     uint256 Sonbola = 10**7;
-    uint256 public monthly = 30 days;
+    uint256 public constant monthly = 30 days;
     uint256 public investorCount;
     uint256 private IDinvestor;
     uint256 public investorVault;
+    uint256 private constant _NOT_ENTERED = 1;
+    uint256 private constant _ENTERED = 2;
+    uint256 private _status;
 
     event ISLAMIClaimed(address Investor, uint256 Amount);
     event ChangeOwner(address NewOwner);
@@ -45,12 +48,18 @@ contract ISLAMIvesting2 {
         require(Investor[_investor] == true);
         _;
     }
-
+    modifier nonReentrant() {
+        require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
+        _status = _ENTERED;
+        _;
+        _status = _NOT_ENTERED;
+    }
     constructor(ISLAMICOIN _ISLAMI) {
         owner = msg.sender;
         investorCount = 0;
         IDinvestor = 0;
         ISLAMI = _ISLAMI;
+        _status = _NOT_ENTERED;
     }
     function transferOwnership(address _newOwner)external onlyOwner{
         emit ChangeOwner(_newOwner);
@@ -79,7 +88,7 @@ contract ISLAMIvesting2 {
         investorVault += amount;
         investorCount++;
     }
-    function claimMonthlyAmount() external isInvestor(msg.sender){
+    function claimMonthlyAmount() external isInvestor(msg.sender) nonReentrant{
         uint256 totalTimeLock = investor[msg.sender].monthLock;
         uint256 remainAmount = investor[msg.sender].amount;
         require(totalTimeLock <= block.timestamp, "Your need to wait till your token get unlocked");
@@ -99,11 +108,12 @@ contract ISLAMIvesting2 {
         emit ISLAMIClaimed(msg.sender, amountAllowed);
         ISLAMI.transfer(msg.sender, amountAllowed);
     }
-    function claimRemainings() external isInvestor(msg.sender){
+    function claimRemainings() external isInvestor(msg.sender) nonReentrant{
         uint256 totalTimeLock = investor[msg.sender].lockTime.add(365 days);
         require(totalTimeLock <= block.timestamp, "You can't claim you remaining yet!");
         uint256 remainAmount = investor[msg.sender].amount;
         uint256 _investorID = investor[msg.sender].investorID;
+        investor[msg.sender].amount = 0;
         investorVault -= remainAmount;
         Investor[msg.sender] = false;
         delete investor[msg.sender];
