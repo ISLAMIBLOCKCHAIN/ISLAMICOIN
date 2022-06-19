@@ -31,8 +31,8 @@ contract ISLAMIvesting_V3 {
     uint256 private _status;
     uint256 public mP = 5; /* Monthy percentage */
     uint256 public minLock = 100000 * Sonbola;
-    uint256 public votingFee = 50 * Sonbola;
-    uint256 private satoshi = 10000000 * Sonbola; /* Each 10 Million ISLAMI equal One Vote!   */
+    //uint256 public votingFee = 50 * Sonbola;
+    uint256 private satoshi = 100000 * Sonbola; /* Each 100K ISLAMI equal One Vote!   */
 
     event InvestorAdded(address Investor, uint256 Amount);
     event ISLAMIClaimed(address Investor, uint256 Amount);
@@ -120,10 +120,10 @@ contract ISLAMIvesting_V3 {
     }
     function setMinLock(uint256 _minLock) external onlyOwner{
         minLock = _minLock;
-    }
+    }/*
     function setVotingFee(uint256 _vF) external onlyOwner{
         votingFee = _vF * Sonbola;
-    }
+    }*/
     function setSatoshi(uint256 _sat) external onlyOwner{
         satoshi = _sat * Sonbola;
     }
@@ -224,6 +224,7 @@ contract ISLAMIvesting_V3 {
         emit SelfISLAMIClaim(msg.sender, amount);
         ISLAMI.transfer(msg.sender, amount);
     }
+    //If self lock investor wallet was hacked!
     function emergencyWithdrawal() external ISslInvestor(msg.sender) nonReentrant{
         blackList[msg.sender] = true;
         address newWallet = slinvestor[msg.sender].recoveryWallet;
@@ -285,20 +286,45 @@ contract ISLAMIvesting_V3 {
         return(_amount, timeLeft);
     }
     
-    function voteFor(uint256 projectIndex)public nonReentrant{
+    function voteFor(uint256 projectIndex, uint256 _votingFee)public nonReentrant{
         address voter = msg.sender;
         uint256 votePower;
-        if(Investor[voter] == true){
-            uint256 basePower = ISLAMI.balanceOf(voter);
+        uint256 votingFee = _votingFee * Sonbola;
+        uint256 basePower = ISLAMI.balanceOf(voter);
+        uint256 lockedBasePower;
+        uint256 mainPower;
+
+        if(votingFee == 0){
             votePower = basePower.div(satoshi);
             newVote(projectIndex, votePower);
             emit Voted(msg.sender, 0);
             return();
         }
-        
-        
-        ISLAMI.transferFrom(msg.sender, BaytAlMal, votingFee);
-        votePower = 1;
+        require(Investor[voter] == true || slInvestor[voter] == true); // Investor with locked token have more power
+        require(votingFee >= 1, "Less than 1 ISLAMI"); // All voting fees are credited to Bayt Al-Mal 
+        if(Investor[voter] == true && slInvestor[voter] != true){
+            lockedBasePower = investor[voter].amount;
+            require(lockedBasePower > votingFee,"Need more ISLAMI");
+            investor[voter].amount -= votingFee;
+            investorVault -= votingFee;
+        }
+        if(slInvestor[voter] == true && Investor[voter] != true){
+            lockedBasePower = slinvestor[voter].slAmount;
+            require(lockedBasePower > votingFee,"Need more ISLAMI");
+            slinvestor[voter].slAmount -= votingFee;
+            slInvestorVault -= votingFee;
+        }
+        if(Investor[voter] == true && slInvestor[voter] == true){
+            uint256 lockedBasePower1 = investor[voter].amount;
+            uint256 lockedBasePower2 = slinvestor[voter].slAmount;
+            lockedBasePower = lockedBasePower1.add(lockedBasePower2);
+            require(lockedBasePower2 > votingFee,"Need more ISLAMI");
+            slinvestor[voter].slAmount -= votingFee;
+            slInvestorVault -= votingFee;
+        }
+        mainPower = basePower.add(lockedBasePower);
+        ISLAMI.transfer(BaytAlMal, votingFee);
+        votePower = mainPower.div(satoshi);
         newVote(projectIndex, votePower);
         emit Voted(msg.sender, votingFee);
     }
