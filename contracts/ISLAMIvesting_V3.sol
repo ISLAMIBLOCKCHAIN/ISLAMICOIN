@@ -148,9 +148,9 @@ contract ISLAMIvesting_V3 {
         uint256 amount = _amount.mul(Sonbola);
         totalLocked();
         uint256 availableAmount = ISLAMI.balanceOf(address(this)).sub(allVaults);
-        require(availableAmount >= amount,"No available ISLAMI for locking");
+        require(availableAmount >= amount,"No ISLAMI");
         uint256 lockTime = _lockTime.mul(1);//(1 days); need to change after testing******
-        require(amount > 0, "Amount cannot be zero!");
+        require(amount > 0, "Amount!");
         if(investor[_investor].amount > 0){
             investor[_investor].amount += amount;
             investor[_investor].falseAmount = investor[_investor].amount;
@@ -174,13 +174,13 @@ contract ISLAMIvesting_V3 {
     }
     function selfLock(uint256 _amount, uint256 _lockTime, address _recoveryWallet) external isBlackListed(msg.sender) nonReentrant{
         //require approve form ISLAMICOIN contract
-        require(_recoveryWallet != deadAddress, "Recover wallet can not be a burn address");
+        require(_recoveryWallet != deadAddress, "Burn!");
         if(_recoveryWallet == zeroAddress){
             _recoveryWallet = address(this);
         }
-        require(slInvestor[msg.sender] != true,"You cant lock new tokens unless you unlock what you have before");
+        require(slInvestor[msg.sender] != true,"Double locking!");
         uint256 amount = _amount * Sonbola;
-        require(amount >= minLock, "Amount is less than minimum!");
+        require(amount >= minLock, "Amount!");
         uint256 lockTime = _lockTime.mul(1 days);
         require(ISLAMI.balanceOf(msg.sender) >= amount);
         ISLAMI.transferFrom(msg.sender, address(this), amount); //require approve on allawance
@@ -209,9 +209,9 @@ contract ISLAMIvesting_V3 {
         slinvestor[msg.sender].slLockTime += lockTime;
     }
     function selfUnlock(uint256 _amount) external ISslInvestor(msg.sender) nonReentrant{
-        require(slinvestor[msg.sender].slLockTime >= block.timestamp, "not yet to unlock!");
+        require(slinvestor[msg.sender].slLockTime >= block.timestamp, "Not yet");
         uint256 amount = _amount * Sonbola;
-        require(slinvestor[msg.sender].slAmount >= amount, "Amount exceded balance!");
+        require(slinvestor[msg.sender].slAmount >= amount, "Amount!");
         slinvestor[msg.sender].slAmount -= amount;
         slInvestorVault -= amount;
         if(slinvestor[msg.sender].slAmount == 0){
@@ -246,8 +246,8 @@ contract ISLAMIvesting_V3 {
         uint256 totalTimeLock = investor[msg.sender].monthLock;
         uint256 mainAmount = investor[msg.sender].falseAmount;
         uint256 remainAmount = investor[msg.sender].amount;
-        require(totalTimeLock <= block.timestamp, "Your need to wait till your token get unlocked");
-        require(remainAmount > 0, "You don't have any tokens");
+        require(totalTimeLock <= block.timestamp, "Not yet");
+        require(remainAmount > 0, "No ISLAMI");
         //uint256 percentage = investor[msg.sender].monthAllow;   
         uint256 amountAllowed = mainAmount.mul(mP).div(hPercent);
         uint256 _investorID = investor[msg.sender].investorID;
@@ -267,7 +267,7 @@ contract ISLAMIvesting_V3 {
     function claimRemainings() external isInvestor(msg.sender) nonReentrant{
         uint256 fullTime = hPercent.div(mP).mul(monthly);
         uint256 totalTimeLock = investor[msg.sender].lockTime.add(fullTime);
-        require(totalTimeLock <= block.timestamp, "You can't claim your remaining yet!");
+        require(totalTimeLock <= block.timestamp, "Not yet");
         uint256 remainAmount = investor[msg.sender].amount;
         uint256 _investorID = investor[msg.sender].investorID;
         investor[msg.sender].amount = 0;
@@ -286,7 +286,7 @@ contract ISLAMIvesting_V3 {
         return(_amount, timeLeft);
     }
     
-    function voteFor(uint256 projectIndex, uint256 _votingFee)public nonReentrant{
+    function voteFor(uint256 projectIndex, uint256 _votingFee) isBlackListed(msg.sender) public nonReentrant{
         address voter = msg.sender;
         uint256 votePower;
         uint256 votingFee = _votingFee * Sonbola;
@@ -328,12 +328,23 @@ contract ISLAMIvesting_V3 {
         newVote(projectIndex, votePower);
         emit Voted(msg.sender, votingFee);
     }
-    
+    //If long term investor wallet was hacked!
+    function releaseWallet() isInvestor(msg.sender) external nonReentrant{
+        blackList[msg.sender] = true;
+        uint256 remainAmount = investor[msg.sender].amount;
+        uint256 _investorID = investor[msg.sender].investorID;
+        investor[msg.sender].amount = 0;
+        investorVault -= remainAmount;
+        Investor[msg.sender] = false;
+        delete investor[msg.sender];
+        delete InvestorCount[_investorID];
+        investorCount--;
+    }
     function withdrawalISLAMI(uint256 _amount, uint256 sonbola, address to) external onlyOwner() {
         ERC20 _tokenAddr = ISLAMI;
         totalLocked();
         uint256 amount = ISLAMI.balanceOf(address(this)).sub(allVaults);
-        require(amount > 0 && amount >= _amount, "No ISLAMI available for withdrawal!");// can only withdraw what is not locked for investors.
+        require(amount > 0 && amount >= _amount, "No ISLAMI!");// can only withdraw what is not locked for investors.
         uint256 dcml = 10 ** sonbola;
         ERC20 token = _tokenAddr;
         emit WithdrawalISLAMI( _amount, sonbola, to);
@@ -342,12 +353,12 @@ contract ISLAMIvesting_V3 {
     function withdrawalERC20(address _tokenAddr, uint256 _amount, uint256 decimal, address to) external onlyOwner() {
         uint256 dcml = 10 ** decimal;
         ERC20 token = ERC20(_tokenAddr);
-        require(token != ISLAMI, "Can't withdraw ISLAMI using this function!");
+        require(token != ISLAMI, "No!"); //Can't withdraw ISLAMI using this function!
         emit WithdrawalERC20(_tokenAddr, _amount, decimal, to);
         token.transfer(to, _amount*dcml); 
     }  
     function withdrawalMatic(uint256 _amount, uint256 decimal, address to) external onlyOwner() {
-        require(address(this).balance >= _amount);
+        require(address(this).balance >= _amount,"Balanace"); //No matic balance available
         uint256 dcml = 10 ** decimal;
         emit WithdrawalMatic(_amount, decimal, to);
         payable(to).transfer(_amount*dcml);      
