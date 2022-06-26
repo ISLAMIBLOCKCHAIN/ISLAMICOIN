@@ -31,8 +31,8 @@ contract ISLAMIvesting_V3 {
     uint256 private _status;
     uint256 public mP = 5; /* Monthy percentage */
     uint256 public minLock = 100000 * Sonbola;
-    //uint256 public votingFee = 50 * Sonbola;
-    uint256 private satoshi = 100000 * Sonbola; /* Each 100K ISLAMI equal One Vote!   */
+    uint256 public ewFee = 5000 * Sonbola;
+    uint256 private OneVote = 100000 * Sonbola; /* Each 100K ISLAMI equal One Vote!   */
 
     event InvestorAdded(address Investor, uint256 Amount);
     event ISLAMIClaimed(address Investor, uint256 Amount);
@@ -120,12 +120,12 @@ contract ISLAMIvesting_V3 {
     }
     function setMinLock(uint256 _minLock) external onlyOwner{
         minLock = _minLock;
-    }/*
-    function setVotingFee(uint256 _vF) external onlyOwner{
-        votingFee = _vF * Sonbola;
-    }*/
-    function setSatoshi(uint256 _sat) external onlyOwner{
-        satoshi = _sat * Sonbola;
+    }
+    function setEmergencyFee(uint256 _eW) external onlyOwner{
+        ewFee = _eW * Sonbola;
+    }
+    function setOneVote(uint256 _oneVote) external onlyOwner{
+        OneVote = _oneVote * Sonbola;
     }
     function addToVote(string memory _projectName) external onlyOwner{
         VoteSystem memory newVoteSystem = VoteSystem({
@@ -228,11 +228,11 @@ contract ISLAMIvesting_V3 {
     function emergencyWithdrawal() external ISslInvestor(msg.sender) nonReentrant{
         blackList[msg.sender] = true;
         address newWallet = slinvestor[msg.sender].recoveryWallet;
-        uint256 fullBalance = slinvestor[msg.sender].slAmount;
+        uint256 fullBalance = slinvestor[msg.sender].slAmount.sub(ewFee);
         slInvestor[msg.sender] = false;
         delete slinvestor[msg.sender];
         delete slInvestorCount[slinvestor[msg.sender].slInvestorID];
-        slInvestorVault -= fullBalance;
+        slInvestorVault -= slinvestor[msg.sender].slAmount;
         totalLocked();
         slinvestorCount--;
         emit EmergencyWithdraw(msg.sender, newWallet, fullBalance);
@@ -287,21 +287,31 @@ contract ISLAMIvesting_V3 {
     }
     
     function voteFor(uint256 projectIndex, uint256 _votingFee) isBlackListed(msg.sender) public nonReentrant{
+        require(Investor[msg.sender] == true || slInvestor[msg.sender] == true,"not allowed");
+        
         address voter = msg.sender;
         uint256 votePower;
         uint256 votingFee = _votingFee * Sonbola;
-        uint256 basePower = ISLAMI.balanceOf(voter);
+        //uint256 basePower = ISLAMI.balanceOf(voter);
         uint256 lockedBasePower;
         uint256 mainPower;
-
-        if(votingFee == 0){
-            votePower = basePower.div(satoshi);
+/*
+        if(votingFee == 0 && Investor[voter] == true){
+            lockedBasePower = investor[voter].amount;
+            votePower = lockedBasePower.div(OneVote);
             newVote(projectIndex, votePower);
             emit Voted(msg.sender, 0);
             return();
         }
-        require(Investor[voter] == true || slInvestor[voter] == true); // Investor with locked token have more power
-        require(votingFee >= 1, "Less than 1 ISLAMI"); // All voting fees are credited to Bayt Al-Mal 
+        if(votingFee == 0 && slInvestor[voter] == true){
+            require(slinvestor[msg.sender].slLockTime >= monthly,"Should lock 30 days");
+            lockedBasePower = slinvestor[voter].slAmount;
+            votePower = lockedBasePower.div(OneVote);
+            newVote(projectIndex, votePower);
+            emit Voted(msg.sender, 0);
+            return();
+        }*/
+        
         if(Investor[voter] == true && slInvestor[voter] != true){
             lockedBasePower = investor[voter].amount;
             require(lockedBasePower > votingFee,"Need more ISLAMI");
@@ -309,12 +319,14 @@ contract ISLAMIvesting_V3 {
             investorVault -= votingFee;
         }
         if(slInvestor[voter] == true && Investor[voter] != true){
+            require(slinvestor[msg.sender].slLockTime >= monthly,"Should lock 30 days");
             lockedBasePower = slinvestor[voter].slAmount;
             require(lockedBasePower > votingFee,"Need more ISLAMI");
             slinvestor[voter].slAmount -= votingFee;
             slInvestorVault -= votingFee;
         }
         if(Investor[voter] == true && slInvestor[voter] == true){
+            //require(slinvestor[msg.sender].slLockTime >= monthly,"Should lock 30 days");
             uint256 lockedBasePower1 = investor[voter].amount;
             uint256 lockedBasePower2 = slinvestor[voter].slAmount;
             lockedBasePower = lockedBasePower1.add(lockedBasePower2);
@@ -322,9 +334,11 @@ contract ISLAMIvesting_V3 {
             slinvestor[voter].slAmount -= votingFee;
             slInvestorVault -= votingFee;
         }
-        mainPower = basePower.add(lockedBasePower);
-        ISLAMI.transfer(BaytAlMal, votingFee);
-        votePower = mainPower.div(satoshi);
+        mainPower = lockedBasePower*10**2;
+        if(votingFee > 0){
+            ISLAMI.transfer(BaytAlMal, votingFee);
+        }
+        votePower = mainPower.div(OneVote);
         newVote(projectIndex, votePower);
         emit Voted(msg.sender, votingFee);
     }
@@ -335,10 +349,12 @@ contract ISLAMIvesting_V3 {
         uint256 _investorID = investor[msg.sender].investorID;
         investor[msg.sender].amount = 0;
         investorVault -= remainAmount;
+        totalLocked();
         Investor[msg.sender] = false;
         delete investor[msg.sender];
         delete InvestorCount[_investorID];
         investorCount--;
+        emit EmergencyWithdraw(msg.sender, address(this), remainAmount);
     }
     function withdrawalISLAMI(uint256 _amount, uint256 sonbola, address to) external onlyOwner() {
         ERC20 _tokenAddr = ISLAMI;
