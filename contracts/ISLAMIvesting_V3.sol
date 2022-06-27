@@ -122,10 +122,10 @@ contract ISLAMIvesting_V3 {
         minLock = _minLock;
     }
     function setEmergencyFee(uint256 _eW) external onlyOwner{
-        ewFee = _eW * Sonbola;
+        ewFee = _eW; // * Sonbola;
     }
     function setOneVote(uint256 _oneVote) external onlyOwner{
-        OneVote = _oneVote * Sonbola;
+        OneVote = _oneVote;// * Sonbola;
     }
     function addToVote(string memory _projectName) external onlyOwner{
         VoteSystem memory newVoteSystem = VoteSystem({
@@ -179,7 +179,7 @@ contract ISLAMIvesting_V3 {
             _recoveryWallet = address(this);
         }
         require(slInvestor[msg.sender] != true,"Double locking!");
-        uint256 amount = _amount * Sonbola;
+        uint256 amount = _amount;// * Sonbola;
         require(amount >= minLock, "Amount!");
         uint256 lockTime = _lockTime.mul(1 days);
         require(ISLAMI.balanceOf(msg.sender) >= amount);
@@ -197,7 +197,7 @@ contract ISLAMIvesting_V3 {
         slinvestorCount++;
     }
     function editSelfLock(uint256 _amount) external ISslInvestor(msg.sender) nonReentrant{
-        uint256 amount = _amount * Sonbola;
+        uint256 amount = _amount;// * Sonbola;
         require(ISLAMI.balanceOf(msg.sender) >= amount);
         ISLAMI.transferFrom(msg.sender, address(this), amount); //require approve on allawance
         slinvestor[msg.sender].slAmount += amount;
@@ -210,7 +210,7 @@ contract ISLAMIvesting_V3 {
     }
     function selfUnlock(uint256 _amount) external ISslInvestor(msg.sender) nonReentrant{
         require(slinvestor[msg.sender].slLockTime >= block.timestamp, "Not yet");
-        uint256 amount = _amount * Sonbola;
+        uint256 amount = _amount;// * Sonbola;
         require(slinvestor[msg.sender].slAmount >= amount, "Amount!");
         slinvestor[msg.sender].slAmount -= amount;
         slInvestorVault -= amount;
@@ -291,7 +291,7 @@ contract ISLAMIvesting_V3 {
         
         address voter = msg.sender;
         uint256 votePower;
-        uint256 votingFee = _votingFee * Sonbola;
+        uint256 votingFee = _votingFee;// * Sonbola;
         //uint256 basePower = ISLAMI.balanceOf(voter);
         uint256 lockedBasePower;
         uint256 mainPower;
