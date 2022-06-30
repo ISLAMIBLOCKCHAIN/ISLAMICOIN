@@ -224,7 +224,7 @@ contract ISLAMIvesting_V4 {
         useRecovery(_investor);
     }
     function selfUnlock(uint256 _amount) external ISslInvestor(msg.sender) nonReentrant{
-        require(slinvestor[msg.sender].slLockTime >= block.timestamp, "Not yet");
+        require(slinvestor[msg.sender].slLockTime <= block.timestamp, "Not yet");
         uint256 amount = _amount;
         require(slinvestor[msg.sender].slAmount >= amount, "Amount!");
         slinvestor[msg.sender].slAmount -= amount;
