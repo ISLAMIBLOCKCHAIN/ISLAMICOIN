@@ -219,7 +219,7 @@ contract ISLAMIvesting_V4 {
     }
     function recoverWallet(address _investor) external ISslInvestor(_investor) nonReentrant{ //Investor lost his phone or wallet, or passed away!
         require(msg.sender == slinvestor[_investor].recoveryWallet &&
-        slinvestor[_investor].slLockTime > block.timestamp,
+        slinvestor[_investor].slLockTime < block.timestamp,
         "Not allowed"); // only the wallet registered as recovery can claim tokens after lock is done
         useRecovery(_investor);
     }
