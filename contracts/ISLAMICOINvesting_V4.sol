@@ -449,10 +449,6 @@ contract ISLAMIvesting_V4 {
     function voteFor(uint256 projectIndex, uint256 _votingFee) isNotBlackListed(msg.sender) public nonReentrant{
         require(votingEventLive == true,"No voting event");
         require(Investor[msg.sender] == true || slInvestor[msg.sender] == true,"not allowed");
-        if(votingEventID > investor[msg.sender].votedForEvent){
-            investor[msg.sender].voted == false;
-        }
-        require(investor[msg.sender].voted != true,"Already Voted!");
         address voter = msg.sender;
         uint256 votePower;
         uint256 votingFee = _votingFee;
@@ -460,24 +456,42 @@ contract ISLAMIvesting_V4 {
         uint256 mainPower;
 
         if(Investor[voter] == true && slInvestor[voter] != true){
+            if(votingEventID > investor[msg.sender].votedForEvent){
+                investor[msg.sender].voted == false;
+        }
+            require(investor[msg.sender].voted != true,"Already Voted!");
             lockedBasePower = investor[voter].amount;
             require(lockedBasePower > votingFee,"Need more ISLAMI");
             investor[voter].amount -= votingFee;
+            investor[msg.sender].voted = true;
+            investor[msg.sender].votedForEvent = votingEventID;
             investorVault -= votingFee;
         }
         if(slInvestor[voter] == true && Investor[voter] != true){
+            if(votingEventID > slinvestor[msg.sender].votedForEvent){
+                slinvestor[msg.sender].voted == false;
+        }
+            require(slinvestor[msg.sender].voted != true,"Already Voted!");
             require(slinvestor[msg.sender].slLockTime >= monthly,"Should lock 30 days");
             lockedBasePower = slinvestor[voter].slAmount;
             require(lockedBasePower > votingFee,"Need more ISLAMI");
             slinvestor[voter].slAmount -= votingFee;
+            slinvestor[msg.sender].voted = true;
+            slinvestor[msg.sender].votedForEvent = votingEventID;
             slInvestorVault -= votingFee;
         }
         if(Investor[voter] == true && slInvestor[voter] == true){
+            if(votingEventID > investor[msg.sender].votedForEvent){
+                investor[msg.sender].voted == false;
+        }
+            require(investor[msg.sender].voted != true,"Already Voted!");
             uint256 lockedBasePower1 = investor[voter].amount;
             uint256 lockedBasePower2 = slinvestor[voter].slAmount;
             lockedBasePower = lockedBasePower1.add(lockedBasePower2);
             require(lockedBasePower2 > votingFee,"Need more ISLAMI");
             slinvestor[voter].slAmount -= votingFee;
+            investor[msg.sender].voted = true;
+            investor[msg.sender].votedForEvent = votingEventID;
             slInvestorVault -= votingFee;
         }
         mainPower = lockedBasePower*10**2;
@@ -486,7 +500,6 @@ contract ISLAMIvesting_V4 {
         }
         votePower = mainPower.div(OneVote);
         newVote(projectIndex, votePower);
-        investor[msg.sender].votedForEvent = votingEventID;
         emit Voted(votingEventID, msg.sender, votingFee);
     }
 /*
