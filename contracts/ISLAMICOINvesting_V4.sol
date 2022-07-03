@@ -241,7 +241,7 @@ contract ISLAMIvesting_V4 {
 */
     function endVotingEvent() external onlyOwner{
 
-        for(uint i = 0; i<voteSystem.length; i++){
+        for(uint i = 0; i<=voteSystem.length; i++){
             emit VoteResults(votingEventID, voteSystem[i].projectName, voteSystem[i].voteCount);
             voteSystem[i] = voteSystem[voteSystem.length -1];
             voteSystem.pop();
