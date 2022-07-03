@@ -209,11 +209,11 @@ contract ISLAMIvesting_V4 {
     @dev: Add voting project and start the voting event
 */
     function setVotingEvent(string memory p1, string memory p2, string memory p3) external onlyOwner{
+        votingEventLive = true;
         addToVote(p1);
         addToVote(p2);
         addToVote(p3);
         votingEventID++;
-        votingEventLive = true;
     }
 /*
     @dev: If voting projects are more than 3 owner can add 
