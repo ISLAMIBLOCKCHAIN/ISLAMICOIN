@@ -457,7 +457,7 @@ contract ISLAMIvesting_V4 {
 
         if(Investor[voter] == true && slInvestor[voter] != true){
             if(votingEventID > investor[msg.sender].votedForEvent){
-                investor[msg.sender].voted == false;
+                investor[msg.sender].voted = false;
         }
             require(investor[msg.sender].voted != true,"Already Voted!");
             lockedBasePower = investor[voter].amount;
@@ -469,7 +469,7 @@ contract ISLAMIvesting_V4 {
         }
         if(slInvestor[voter] == true && Investor[voter] != true){
             if(votingEventID > slinvestor[msg.sender].votedForEvent){
-                slinvestor[msg.sender].voted == false;
+                slinvestor[msg.sender].voted = false;
         }
             require(slinvestor[msg.sender].voted != true,"Already Voted!");
             require(slinvestor[msg.sender].slLockTime >= monthly,"Should lock 30 days");
@@ -482,7 +482,7 @@ contract ISLAMIvesting_V4 {
         }
         if(Investor[voter] == true && slInvestor[voter] == true){
             if(votingEventID > investor[msg.sender].votedForEvent){
-                investor[msg.sender].voted == false;
+                investor[msg.sender].voted = false;
         }
             require(investor[msg.sender].voted != true,"Already Voted!");
             uint256 lockedBasePower1 = investor[voter].amount;
