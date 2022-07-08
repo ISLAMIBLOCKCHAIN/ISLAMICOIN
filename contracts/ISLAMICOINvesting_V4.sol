@@ -9,15 +9,15 @@
 also used for voting and recovery wallet service
 */
 
-
-import "./importISLAMICOIN.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 pragma solidity = 0.8.15;
 
 contract ISLAMIvesting_V4 {
     using SafeMath for uint256;
     address private owner;
-    ISLAMICOIN public ISLAMI;
+    ERC20 public ISLAMI;
 
     address public BaytAlMal = 0xC315A5Ce1e6330db2836BD3Ed1Fa7228C068cE20;
     address public constant zeroAddress = address(0x0);
@@ -35,7 +35,7 @@ contract ISLAMIvesting_V4 {
 /*
 @dev: public values
 */
-    uint256 public Sonbola = 10**7; // Number of Decimals in ISLAMI
+    uint256 public constant Sonbola = 10**7; // Number of Decimals in ISLAMI
     uint256 public constant monthly = 30 days;
     uint256 public investorCount;
     uint256 public investorVault;
@@ -63,6 +63,7 @@ contract ISLAMIvesting_V4 {
     event ExtendSelfLock(address Investor, uint256 Time);
     event SelfISLAMIClaim(address Investor, uint256 Amount);
     event EmergencyWithdraw(address Investor, address NewWallet, uint256 Amount);
+    event EmergencyFeeChanged(uint256 oldFee, uint256 newFee);
     event ChangeOwner(address NewOwner);
     event Voted(uint256 VotingEvent, address Voter, uint256 voteFee);
     event VoteResults(uint256 VotingEvent, string projectName,uint256 Result);
@@ -153,7 +154,7 @@ contract ISLAMIvesting_V4 {
         _;
         _status = _NOT_ENTERED;
     }
-    constructor(ISLAMICOIN _ISLAMI) {
+    constructor(ERC20 _ISLAMI) {
         owner = msg.sender;
         investorCount = 0;
         ISLAMI = _ISLAMI;
@@ -196,6 +197,7 @@ contract ISLAMIvesting_V4 {
     paid by user if used emergencyWithdrawal
 */
     function setEmergencyFee(uint256 _eW) external onlyOwner{
+        emit EmergencyFeeChanged(ewFee, _eW);
         ewFee = _eW;
     }
 /*
@@ -303,7 +305,7 @@ contract ISLAMIvesting_V4 {
         uint256 amount = _amount;
         require(amount >= minLock, "Amount!");
         uint256 lockTime = _lockTime.mul(1 days);
-        require(ISLAMI.balanceOf(msg.sender) >= amount);
+        require(ISLAMI.balanceOf(msg.sender) >= amount,"Need ISLAMI!");
         ISLAMI.transferFrom(msg.sender, address(this), amount);
         emit SelfLockInvestor(msg.sender, amount);
         slinvestor[msg.sender].slAmount = amount; 
@@ -322,7 +324,7 @@ contract ISLAMIvesting_V4 {
 */
     function editSelfLock(uint256 _amount) external ISslInvestor(msg.sender) nonReentrant{
         uint256 amount = _amount;// * Sonbola;
-        require(ISLAMI.balanceOf(msg.sender) >= amount);
+        require(ISLAMI.balanceOf(msg.sender) >= amount,"Need ISLAMI!");
         ISLAMI.transferFrom(msg.sender, address(this), amount);
         slinvestor[msg.sender].slAmount += amount;
         slInvestorVault += amount;
@@ -551,6 +553,7 @@ contract ISLAMIvesting_V4 {
 */
     function withdrawalMatic(uint256 _amount, uint256 decimal, address to) external onlyOwner() {
         require(address(this).balance >= _amount,"Balanace"); //No matic balance available
+        require(to != address(0), "Zero Address");
         uint256 dcml = 10 ** decimal;
         emit WithdrawalMatic(_amount, decimal, to);
         payable(to).transfer(_amount*dcml);      
