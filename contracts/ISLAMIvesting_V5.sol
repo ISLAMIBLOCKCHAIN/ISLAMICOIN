@@ -2,7 +2,6 @@
 
 /*
 @dev: This code is developed by Jaafar Krayem and is free to be used by anyone
-Contract is audited by solidproof.io 100% passed
 Use under your own responsibility!
 */
 
@@ -261,20 +260,10 @@ contract ISLAMIvesting_V5 {
         votingEventLive = false;
     }
 /*
-    @dev: Calculate total locked tokens and set value to
-    the reserve (allVaults)
+    @dev: Add suported Crypto Currency
 */
     function addCrypto(uint256 _ID, address _token, string memory _symbol, uint256 _fractions) external onlyOwner{
         ERC20 token = ERC20(_token);
-        /*
-        cryptocurrency memory newCrypto = cryptocurrency({
-            currencyID: _ID,
-            tokenAddress: token,
-            fractions: _fractions,
-            currencyVault: 0
-        });
-        crypto.push(newCrypto);
-        */
         crypto[token].currencyID = _ID;
         crypto[token].tokenAddress = token;
         crypto[token].symbol = _symbol;
@@ -282,11 +271,12 @@ contract ISLAMIvesting_V5 {
         isCrypto[token] = true;
 
     }
-    /*
-    function totalLocked() internal{
-        allVaults = investorVault.add(slInvestorVault);
+    
+    function deleteCrypto(address _token) external onlyOwner{
+        delete crypto[ERC20(_token)];
+        isCrypto[ERC20(_token)] = false;
     }
-*/
+
 /*
     @dev: Long term investors & first investors who had their tokens 
     locked before in other contract and in old vesting contract are 
