@@ -30,6 +30,7 @@ contract ISLAMIvesting_V4 {
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
     uint256 private _status;
+    uint256 private answerCount;
     uint256 private OneVote = 100000 * Sonbola; /* Each 100K ISLAMI equal One Vote!   */
 
 /*
@@ -51,7 +52,7 @@ contract ISLAMIvesting_V4 {
 /*
 @dev: Bool Values
 */
-    bool votingEventLive = false;
+    bool public votingEventLive = false;
 
 /*
 @dev: Events
@@ -97,11 +98,18 @@ contract ISLAMIvesting_V4 {
 /*
 @dev: Voting System
 */
-    struct VoteSystem{
-        string projectName;
+    struct VoteOptions{
+        string voteOption;
         uint256 voteCount;
     }
- 
+    struct VoteEvent{
+        uint256 eventID;
+        string question;
+        mapping(uint256 => VoteOptions) answers;
+        //uint256 optionsCount;
+        uint256 status;
+        string winner;
+    }
 
 /*
  @dev: Mappings
@@ -114,10 +122,12 @@ contract ISLAMIvesting_V4 {
    
     mapping(address => SelfLock) public slinvestor;
 
-    mapping(address => bool) public blackList; 
+    mapping(address => bool) public blackList;
+
+    mapping(uint256 => VoteEvent) public Event; 
 /**/   
 
-    VoteSystem[] public voteSystem;
+    //VoteSystem[] public voteSystem;
 
 /* @dev: Check if contract owner */
     modifier onlyOwner (){
@@ -157,6 +167,7 @@ contract ISLAMIvesting_V4 {
     constructor(ERC20 _ISLAMI) {
         owner = msg.sender;
         investorCount = 0;
+        votingEventID = 0;
         ISLAMI = _ISLAMI;
         _status = _NOT_ENTERED;
     }
@@ -175,6 +186,17 @@ contract ISLAMIvesting_V4 {
     function changeBaytAlMal(address _newBaytAlMal) external onlyOwner{
         require(_newBaytAlMal != zeroAddress,"Zero Address");
         BaytAlMal = _newBaytAlMal;
+    }
+/*
+    @dev: Check if caller has locked tokens
+*/    
+    function hasLockedTokens(address _investor) public view returns(bool){
+        if(Investor[_investor] == true || slInvestor[_investor] == true){
+            return true;
+        }
+        else{
+            return false;
+        }
     }
 /*
     @dev: Set monthly percentage allowed for long term investors
@@ -210,44 +232,79 @@ contract ISLAMIvesting_V4 {
 /*
     @dev: Add voting project and start the voting event
 */
-    function setVotingEvent(string memory p1, string memory p2, string memory p3) external onlyOwner{
-        votingEventLive = true;
-        addToVote(p1);
-        addToVote(p2);
-        addToVote(p3);
+    function setVotingEvent(string memory _question, string memory o1, string memory o2, string memory o3) external onlyOwner{
         votingEventID++;
+        votingEventLive = true;
+        Event[votingEventID].eventID = votingEventID;
+        Event[votingEventID].question = _question;
+        Event[votingEventID].status = 1; //Voting event is Active
+        addToVote(votingEventID, o1);
+        addToVote(votingEventID, o2);
+        addToVote(votingEventID, o3);
     }
+    /*
+    function isVotingEventLive() public view returns(bool){
+        return(votingEventLive);
+    }*/
 /*
-    @dev: If voting projects are more than 3 owner can add 
-    additions projects for voting using this function.
-    maily used to setVotingEvents
+    @dev: used by set c=voting events
 */
-    function addToVote(string memory _projectName) public{
-        require(msg.sender == owner || msg.sender == address(this),"Not Allowed!");
-        require(votingEventLive == true,"!");
-        VoteSystem memory newVoteSystem = VoteSystem({
-            projectName: _projectName,
-            voteCount: 0
-        });
-        voteSystem.push(newVoteSystem);
-    }
+    function addToVote(uint256 _eventID, string memory _option) internal{
+        answerCount++;
+        require(votingEventLive == true,"Event!");
+        Event[_eventID].answers[answerCount].voteOption = _option;
+    }    
 /*
     @dev: add vote value submitted by user
 */
-    function newVote(uint256 projectIndex, uint256 _vP) internal{
-        voteSystem[projectIndex].voteCount += _vP;
+    function newVote(uint256 _eventID,uint256 _answer, uint256 _vP) internal{
+        Event[_eventID].answers[_answer].voteCount += _vP;
     }
 /*
-     @dev: This function will delete all projects for voting
-     it will also set the votingEventLive value to false.
+     @dev: Check voting results.
 */
-    function endVotingEvent() external onlyOwner{
-
-        for(uint i = 0; i<=voteSystem.length; i++){
-            emit VoteResults(votingEventID, voteSystem[i].projectName, voteSystem[i].voteCount);
-            voteSystem[i] = voteSystem[voteSystem.length -1];
-            voteSystem.pop();
+    function checkVoteResult(uint256 _eventID) internal{
+        if(Event[_eventID].answers[1].voteCount > 
+           Event[_eventID].answers[2].voteCount &&
+           Event[_eventID].answers[1].voteCount >
+           Event[_eventID].answers[3].voteCount){
+               Event[_eventID].winner = Event[_eventID].answers[1].voteOption;
+               return();
         }
+        else if(Event[_eventID].answers[2].voteCount > 
+                Event[_eventID].answers[1].voteCount &&
+                Event[_eventID].answers[2].voteCount >
+                Event[_eventID].answers[3].voteCount){
+                    Event[_eventID].winner = Event[_eventID].answers[2].voteOption;
+                    return();
+        }
+        else if(Event[_eventID].answers[3].voteCount > 
+                Event[_eventID].answers[1].voteCount &&
+                Event[_eventID].answers[3].voteCount >
+                Event[_eventID].answers[2].voteCount){
+                    Event[_eventID].winner = Event[_eventID].answers[3].voteOption;
+                    return();
+        }
+        else{
+            Event[_eventID].winner = "N/A";
+        }
+    }
+    function eventResults() public view returns(uint256, string memory, string memory,uint,string memory,uint,string memory,uint){
+        uint256 _eventID = votingEventID;
+        string memory _question = Event[_eventID].question;
+        return(_eventID, _question,
+        Event[_eventID].answers[1].voteOption,
+        Event[_eventID].answers[1].voteCount,
+        Event[_eventID].answers[2].voteOption,
+        Event[_eventID].answers[2].voteCount,
+        Event[_eventID].answers[3].voteOption,
+        Event[_eventID].answers[3].voteCount);
+    }    
+    function endVotingEvent() external onlyOwner{
+        require(Event[votingEventID].status != 0,"Already ended");
+        answerCount = 0;
+        Event[votingEventID].status = 0; //Zero means voting event has ended
+        checkVoteResult(votingEventID);
         votingEventLive = false;
     }
 /*
@@ -448,7 +505,8 @@ contract ISLAMIvesting_V4 {
     user power is calculated with respect to locked tokens balance
     Voting fee is not obligatory
 */
-    function voteFor(uint256 projectIndex, uint256 _votingFee) isNotBlackListed(msg.sender) public nonReentrant{
+    function voteFor(uint256 _answer, uint256 _votingFee) isNotBlackListed(msg.sender) public nonReentrant{
+        uint256 _eventID = votingEventID;
         require(votingEventLive == true,"No voting event");
         require(Investor[msg.sender] == true || slInvestor[msg.sender] == true,"not allowed");
         address voter = msg.sender;
@@ -458,7 +516,7 @@ contract ISLAMIvesting_V4 {
         uint256 mainPower;
 
         if(Investor[voter] == true && slInvestor[voter] != true){
-            if(votingEventID > investor[msg.sender].votedForEvent){
+            if(_eventID > investor[msg.sender].votedForEvent){
                 investor[msg.sender].voted = false;
         }
             require(investor[msg.sender].voted != true,"Already Voted!");
@@ -466,11 +524,11 @@ contract ISLAMIvesting_V4 {
             require(lockedBasePower > votingFee,"Need more ISLAMI");
             investor[voter].amount -= votingFee;
             investor[msg.sender].voted = true;
-            investor[msg.sender].votedForEvent = votingEventID;
+            investor[msg.sender].votedForEvent = _eventID;
             investorVault -= votingFee;
         }
         if(slInvestor[voter] == true && Investor[voter] != true){
-            if(votingEventID > slinvestor[msg.sender].votedForEvent){
+            if(_eventID > slinvestor[msg.sender].votedForEvent){
                 slinvestor[msg.sender].voted = false;
         }
             require(slinvestor[msg.sender].voted != true,"Already Voted!");
@@ -479,11 +537,11 @@ contract ISLAMIvesting_V4 {
             require(lockedBasePower > votingFee,"Need more ISLAMI");
             slinvestor[voter].slAmount -= votingFee;
             slinvestor[msg.sender].voted = true;
-            slinvestor[msg.sender].votedForEvent = votingEventID;
+            slinvestor[msg.sender].votedForEvent = _eventID;
             slInvestorVault -= votingFee;
         }
         if(Investor[voter] == true && slInvestor[voter] == true){
-            if(votingEventID > investor[msg.sender].votedForEvent){
+            if(_eventID > investor[msg.sender].votedForEvent){
                 investor[msg.sender].voted = false;
         }
             require(investor[msg.sender].voted != true,"Already Voted!");
@@ -493,7 +551,7 @@ contract ISLAMIvesting_V4 {
             require(lockedBasePower2 > votingFee,"Need more ISLAMI");
             slinvestor[voter].slAmount -= votingFee;
             investor[msg.sender].voted = true;
-            investor[msg.sender].votedForEvent = votingEventID;
+            investor[msg.sender].votedForEvent = _eventID;
             slInvestorVault -= votingFee;
         }
         mainPower = lockedBasePower*10**2;
@@ -501,8 +559,8 @@ contract ISLAMIvesting_V4 {
             ISLAMI.transfer(BaytAlMal, votingFee);
         }
         votePower = mainPower.div(OneVote);
-        newVote(projectIndex, votePower);
-        emit Voted(votingEventID, msg.sender, votingFee);
+        newVote(_eventID, _answer, votePower);
+        emit Voted(_eventID, msg.sender, votingFee);
     }
 /*
     @dev: If long term investor wallet was lost!
